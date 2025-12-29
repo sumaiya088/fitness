@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../home/home_page.dart';
+
+import '../onboard/gender_page.dart'; 
+// ✅ BMI না, GENDER
 import 'login_page.dart';
 
 class SignupPage extends StatefulWidget {
-  SignupPage({super.key});
+  const SignupPage({super.key});
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -35,9 +37,10 @@ class _SignupPageState extends State<SignupPage> {
 
     if (!mounted) return;
 
+    // ✅ SIGNUP → GENDER PAGE (FIXED)
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => HomePage()),
+      MaterialPageRoute(builder: (_) => GenderPage()),
     );
   }
 
@@ -54,7 +57,7 @@ class _SignupPageState extends State<SignupPage> {
 
               const SizedBox(height: 40),
 
-              /// 🏋️ Icon
+              /// 🏋️ LOGO (same as before)
               Icon(
                 Icons.fitness_center,
                 size: 60,
@@ -216,3 +219,4 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 }
+

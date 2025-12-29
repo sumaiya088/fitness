@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../auth/login_page.dart';
 
 class SplashScreen extends StatelessWidget {
-  SplashScreen({super.key});
+  const SplashScreen({super.key});
 
   final Color bgColor = const Color(0xFF0F0F0F);
   final Color yellow = const Color(0xFFF5C518);
