@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../onboard/gender_page.dart'; 
-// ✅ BMI না, GENDER
+import '../onboard/gender_page.dart';
 import 'login_page.dart';
 
 class SignupPage extends StatefulWidget {
@@ -18,115 +16,134 @@ class _SignupPageState extends State<SignupPage> {
   final confirmPasswordController = TextEditingController();
 
   bool rememberMe = false;
+  bool isLoading = false;
 
   final Color bgColor = const Color(0xFF1E2328);
   final Color yellow = const Color(0xFFF5C518);
 
   Future<void> signup() async {
-    if (passwordController.text != confirmPasswordController.text) {
+    if (emailController.text.isEmpty ||
+        passwordController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
+        const SnackBar(content: Text("All fields are required")),
       );
       return;
     }
 
-    await Supabase.instance.client.auth.signUp(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    );
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match")),
+      );
+      return;
+    }
 
-    if (!mounted) return;
+    setState(() => isLoading = true);
 
-    // ✅ SIGNUP → GENDER PAGE (FIXED)
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => GenderPage()),
-    );
+    try {
+      final supabase = Supabase.instance.client;
+
+      final res = await supabase.auth.signUp(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      final user = res.user;
+      if (user == null) {
+        throw const AuthException("Signup failed");
+      }
+
+      // ⚠️ IMPORTANT
+      // user_profile insert এখানে করবো না
+      // database trigger এটা automatically করে
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const GenderPage()),
+      );
+    } on AuthException catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Signup error: $e")));
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgColor,
-      body: SingleChildScrollView(
+      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          padding: const EdgeInsets.all(22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-
               const SizedBox(height: 40),
 
-              /// 🏋️ LOGO (same as before)
-              Icon(
+              // ===== ICON =====
+              const Icon(
                 Icons.fitness_center,
-                size: 60,
-                color: Colors.indigoAccent,
+                size: 80,
+                color: Colors.indigo,
               ),
 
               const SizedBox(height: 16),
 
-              /// Title
               Text(
-                'Sign Up',
+                "Sign Up",
                 style: TextStyle(
                   color: yellow,
-                  fontSize: 26,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
               const SizedBox(height: 40),
 
-              /// Email
-              _label('Email Address'),
-              _inputField(
-                controller: emailController,
-                hint: 'Enter your email',
-              ),
+              // ===== EMAIL =====
+              _label("Email Address"),
+              _inputField(emailController, false),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              /// Password
-              _label('Password'),
-              _inputField(
-                controller: passwordController,
-                hint: 'Enter your password',
-                isPassword: true,
-              ),
+              // ===== PASSWORD =====
+              _label("Password"),
+              _inputField(passwordController, true),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              /// Confirm Password
-              _label('Confirm Password'),
-              _inputField(
-                controller: confirmPasswordController,
-                hint: 'Confirm your password',
-                isPassword: true,
-              ),
+              // ===== CONFIRM PASSWORD =====
+              _label("Confirm Password"),
+              _inputField(confirmPasswordController, true),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              /// Remember Me
+              // ===== REMEMBER ME =====
               Row(
                 children: [
                   Checkbox(
                     value: rememberMe,
                     activeColor: yellow,
-                    onChanged: (value) {
-                      setState(() => rememberMe = value!);
+                    onChanged: (v) {
+                      setState(() => rememberMe = v ?? false);
                     },
                   ),
                   const Text(
-                    'Remember me',
+                    "Remember me",
                     style: TextStyle(color: Colors.white),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              /// Sign Up Button
+              // ===== SIGNUP BUTTON =====
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -134,24 +151,28 @@ class _SignupPageState extends State<SignupPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: yellow,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: signup,
-                  child: const Text(
-                    'Sign Up',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  onPressed: isLoading ? null : signup,
+                  child: isLoading
+                      ? const CircularProgressIndicator(
+                          color: Colors.black,
+                        )
+                      : const Text(
+                          "Sign Up",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const Spacer(),
 
-              /// Already have account
+              // ===== SIGN IN =====
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -163,11 +184,13 @@ class _SignupPageState extends State<SignupPage> {
                     onTap: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => LoginPage()),
+                        MaterialPageRoute(
+                          builder: (_) => const LoginPage(),
+                        ),
                       );
                     },
                     child: Text(
-                      'Sign In',
+                      "Sign In",
                       style: TextStyle(
                         color: yellow,
                         fontWeight: FontWeight.bold,
@@ -183,40 +206,34 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  /// 🔹 Label
+  // ===== SMALL UI PARTS =====
+
   Widget _label(String text) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
         text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-        ),
+        style: const TextStyle(color: Colors.white70),
       ),
     );
   }
 
-  /// 🔹 Input Field
-  Widget _inputField({
-    required TextEditingController controller,
-    required String hint,
-    bool isPassword = false,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: Colors.black),
-      decoration: InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: Colors.grey.shade200,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
+  Widget _inputField(TextEditingController c, bool isPass) {
+    return Container(
+      margin: const EdgeInsets.only(top: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextField(
+        controller: c,
+        obscureText: isPass,
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          contentPadding:
+              EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         ),
       ),
     );
   }
 }
-

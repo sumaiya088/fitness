@@ -1,30 +1,341 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../auth/login_page.dart';
+import '../progress/progress_page.dart';
+ // Import the Progress Page
+import '../services/workout_service.dart';
+import '../models/workout.dart';
+import '../category/category_page.dart';
+import '../daily challenge/workout_detail_page.dart'; 
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  HomePage({super.key});
+
+  final WorkoutService service = WorkoutService();
+
+  Future<void> openWorkout(BuildContext context, String title) async {
+    try {
+      final workout = await WorkoutService().getWorkoutByTitle(title);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WorkoutDetailPage(workout: workout),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Workout not found")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    const Color bg = Color(0xFF1E2328);
+    const Color yellow = Color(0xFFF5C518);
+    const Color cardDark = Color(0xFF2A2F35);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Home"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await Supabase.instance.client.auth.signOut();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) =>  LoginPage()),
-                (_) => false,
-              );
-            },
-          )
+      backgroundColor: bg,
+
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: yellow,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black54,
+        currentIndex: 0,  // Set initial index for the selected item
+        onTap: (index) {
+          if (index == 1) {
+            // When the Progress icon is clicked, navigate to ProgressPage
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ProgressPage()),
+            );
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
+          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: ""),  // Progress Icon
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
         ],
       ),
-      body: const Center(child: Text("Logged In")),
+
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              // GREETING
+              const Text(
+                "Hello!\nGood Morning 👋",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // DAILY CHALLENGES
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: yellow,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            "Daily\nChallenges",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                        Image.asset("assets/images/daily.png", height: 90),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              "Take the challenges",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          Icon(Icons.timer, size: 16),
+                          SizedBox(width: 4),
+                          Text("20 min", style: TextStyle(fontSize: 12)),
+                          SizedBox(width: 12),
+                          Icon(Icons.play_circle_fill),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // CHALLENGES
+              const Text(
+                "Challenges",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              Row(
+                children: [
+                  _challengeImage(
+                    "Squats",
+                    "assets/images/Squat.jpg",
+                    () => openWorkout(context, "Squats"),
+                  ),
+                  const SizedBox(width: 12),
+                  _challengeImage(
+                    "Push Up",
+                    "assets/images/push up.jpg",
+                    () => openWorkout(context, "Push Up"),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              _challengeTile(
+                cardDark,
+                "Plank",
+                "15 min",
+                "1 exercise",
+                () => openWorkout(context, "Plank"),
+              ),
+              const SizedBox(height: 10),
+              _challengeTile(
+                cardDark,
+                "Lunges",
+                "20 min",
+                "1 exercise",
+                () => openWorkout(context, "Lunges"),
+              ),
+
+              const SizedBox(height: 30),
+
+              // CATEGORY
+              const Text(
+                "Category",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _CategoryItem(title: "Strengthen", img: "assets/images/strength.png"),
+                  _CategoryItem(title: "Cardio", img: "assets/images/cardio.png"),
+                  _CategoryItem(title: "Stretch", img: "assets/images/stretch.png"),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget _challengeImage(
+    String title,
+    String img,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 120,
+          alignment: Alignment.bottomLeft,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            image: DecorationImage(
+              image: AssetImage(img),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                Colors.black.withOpacity(0.3),
+                BlendMode.darken,
+              ),
+            ),
+          ),
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget _challengeTile(
+    Color bg,
+    String title,
+    String time,
+    String ex,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "$time • $ex",
+                    style: const TextStyle(color: Colors.white54),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white54,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryItem extends StatelessWidget {
+  final String title;
+  final String img;
+
+  const _CategoryItem({required this.title, required this.img});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CategoryPage(title: title),
+          ),
+        );
+      },
+      child: Column(
+        children: [
+          Container(
+            height: 54,
+            width: 54,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              image: DecorationImage(
+                image: AssetImage(img),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

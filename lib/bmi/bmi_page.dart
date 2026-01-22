@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../home/home_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../goals/main_goal_page.dart';
 
 class BmiPage extends StatelessWidget {
   final String gender;
@@ -35,7 +36,7 @@ class BmiPage extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              /// Title
+              /// TITLE
               const Text(
                 'BMI Result',
                 style: TextStyle(
@@ -47,7 +48,7 @@ class BmiPage extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              /// BMI Circle
+              /// BMI CIRCLE
               Container(
                 height: 180,
                 width: 180,
@@ -80,7 +81,7 @@ class BmiPage extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              /// Status
+              /// STATUS
               Text(
                 bmiStatus,
                 style: const TextStyle(
@@ -92,7 +93,7 @@ class BmiPage extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              /// Info Card (NO AGE)
+              /// INFO CARD
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -110,7 +111,7 @@ class BmiPage extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              /// BMI RANGE
+              /// BMI RANGE BAR
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -118,58 +119,46 @@ class BmiPage extends StatelessWidget {
                     "BMI Range",
                     style: TextStyle(color: Colors.white),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
-                  Stack(
-                    children: [
-                      Row(
-                        children: const [
-                          _ScaleBar(Colors.blue),
-                          _ScaleBar(Colors.green),
-                          _ScaleBar(Colors.orange),
-                          _ScaleBar(Colors.red),
-                        ],
-                      ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final barWidth = constraints.maxWidth;
+                      final indicatorX =
+                          _bmiIndicatorX(bmi, barWidth);
 
-                      Positioned(
-                        left: _indicatorPosition(bmi),
-                        child: Container(
-                          height: 14,
-                          width: 4,
-                          decoration: BoxDecoration(
-                            color: yellow,
-                            borderRadius: BorderRadius.circular(4),
+                      return Stack(
+                        children: [
+                          Row(
+                            children: const [
+                              _ScaleBar(Colors.red),
+                              _ScaleBar(Colors.blue),
+                              _ScaleBar(Colors.orange),
+                              _ScaleBar(Colors.purple),
+                            ],
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Under",
-                          style: TextStyle(
-                              color: Colors.white54, fontSize: 11)),
-                      Text("Normal",
-                          style: TextStyle(
-                              color: Colors.white54, fontSize: 11)),
-                      Text("Over",
-                          style: TextStyle(
-                              color: Colors.white54, fontSize: 11)),
-                      Text("Obese",
-                          style: TextStyle(
-                              color: Colors.white54, fontSize: 11)),
-                    ],
+                          Positioned(
+                            left: indicatorX,
+                            top: -6,
+                            child: Container(
+                              width: 4,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: yellow,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
 
               const Spacer(),
 
-              /// NEXT
+              /// ✅ NEXT BUTTON (SUPABASE SAVE)
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -180,13 +169,47 @@ class BmiPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const HomePage(),
-                      ),
-                    );
+                  onPressed: () async {
+                    final supabase = Supabase.instance.client;
+                    final user = supabase.auth.currentUser;
+
+                    if (user == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("User not logged in"),
+                        ),
+                      );
+                      return;
+                    }
+
+                    try {
+                      /// ✅ SAVE DATA TO user_profile
+                      await supabase.from('user_profile').update({
+                        'gender': gender,
+                        'weight': weight.round(),
+                        'height': height.round(),
+                      }).eq('id', user.id);
+
+                      if (!context.mounted) return;
+
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MainGoalPage(
+                            gender: gender,
+                            weight: weight,
+                            height: height,
+                            bmi: bmi,
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Failed to save data: $e"),
+                        ),
+                      );
+                    }
                   },
                   child: const Text(
                     'NEXT',
@@ -205,6 +228,7 @@ class BmiPage extends StatelessWidget {
     );
   }
 
+  /// INFO ROW
   static Widget _infoRow(String title, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -218,14 +242,15 @@ class BmiPage extends StatelessWidget {
     );
   }
 
-  static double _indicatorPosition(double bmi) {
-    if (bmi < 18.5) return 10;
-    if (bmi < 25) return 80;
-    if (bmi < 30) return 160;
-    return 240;
+  /// BMI INDICATOR POSITION
+  static double _bmiIndicatorX(double bmi, double width) {
+    final value = bmi.clamp(0, 40);
+    final percent = value / 40;
+    return (width * percent) - 2;
   }
 }
 
+/// SCALE BAR
 class _ScaleBar extends StatelessWidget {
   final Color color;
   const _ScaleBar(this.color);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../onboard/gender_page.dart';
+import '../home/home_page.dart';
 import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -13,171 +14,181 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  bool isChecked = false;
+  bool keepLogin = false;
 
-  // Login function with error handling
   Future<void> login() async {
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      // Show error if fields are empty
+    if (emailController.text.isEmpty ||
+        passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter both email and password.")),
+        const SnackBar(content: Text("Email & password required")),
       );
       return;
     }
 
     try {
-      final response = await Supabase.instance.client.auth.signInWithPassword(
+      final supabase = Supabase.instance.client;
+
+      final res = await supabase.auth.signInWithPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      if (response.session == null) {
-        // Login failed
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login failed')),
-        );
-      } else {
-        // Navigate to the next page after successful login
-        if (!mounted) return;
+      final user = res.user;
+      if (user == null) throw Exception("Login failed");
+
+      final profile = await supabase
+          .from('user_profile')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (!mounted) return;
+
+      if (profile == null ||
+          profile['gender'] == null ||
+          profile['height'] == null ||
+          profile['weight'] == null ||
+          profile['goal'] == null) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const GenderPage()),
         );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomePage()),
+        );
       }
     } on AuthException catch (e) {
-      // Handle auth exceptions
-      String msg = e.message.toLowerCase().contains('invalid login')
-          ? "Incorrect email or password"
-          : e.message;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
-      // Handle any other unexpected errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("An unexpected error occurred.")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Login error: $e")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E2328), // Set background color
-      body: Center(
+      backgroundColor: const Color(0xFF1E2328),
+      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(22),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Dumbbell Icon moved up slightly
+              const SizedBox(height: 40),
+
+              // ===== ICON =====
               const Icon(
                 Icons.fitness_center,
-                size: 60,
-                color: Colors.indigoAccent,  // Set the color for the icon
+                size: 80,
+                color: Colors.indigo,
               ),
-              const SizedBox(height: 15),  // Decreased space between the icon and text
 
-              // Welcome Back Text moved up slightly and yellow color
+              const SizedBox(height: 16),
+
               const Text(
-                'Welcome Back',
+                "Welcome Back",
                 style: TextStyle(
-                  color: Colors.yellow,  // Set the color to yellow
-                  fontSize: 32,
+                  color: Colors.amber,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 30),  // Increase space before the text field
 
-              // Email Address Input
-              _inputField(controller: emailController, hint: 'Email Address'),
+              const SizedBox(height: 40),
 
-              const SizedBox(height: 20),
+              // ===== EMAIL =====
+              _label("Email Address"),
+              _inputField(emailController, false),
 
-              // Password Input moved closer to the "Forgot Password"
-              _inputField(
-                controller: passwordController,
-                hint: 'Password',
-                isPassword: true,
-              ),
+              const SizedBox(height: 18),
 
-              const SizedBox(height: 10),  // Reduced space between password and "Forgot Password"
+              // ===== PASSWORD =====
+              _label("Password"),
+              _inputField(passwordController, true),
 
-              // Forgot Password Link moved closer
+              const SizedBox(height: 10),
+
+              // ===== FORGOT =====
               Align(
                 alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Forgot password tapped')),
-                    );
-                  },
+                child: TextButton(
+                  onPressed: () {},
                   child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(color: Colors.yellow, fontSize: 13),
+                    "Forget Password?",
+                    style: TextStyle(color: Colors.amber),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 20), // Added space before "Keep me logged in" and "Login" button
-
-              // Keep me logged in Checkbox
+              // ===== KEEP LOGIN =====
               Row(
                 children: [
                   Checkbox(
-                    value: isChecked,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        isChecked = value!;
-                      });
+                    value: keepLogin,
+                    activeColor: Colors.amber,
+                    onChanged: (v) {
+                      setState(() => keepLogin = v ?? false);
                     },
-                    activeColor: Colors.yellow,
                   ),
                   const Text(
-                    'Keep me logged in',
+                    "Keep me Login",
                     style: TextStyle(color: Colors.white),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // Login Button (yellow background)
+              // ===== LOGIN BUTTON =====
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.yellow,  // Correct parameter for background color
-                    padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
+                    backgroundColor: Colors.amber,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: login, // Trigger login function
+                  onPressed: login,
                   child: const Text(
-                    'Login',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    "Login",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const Spacer(),
 
-              // Sign Up Link
+              // ===== SIGN UP =====
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Don't have an account? ",
-                    style: TextStyle(color: Colors.white),
+                    "Don't have an Account? ",
+                    style: TextStyle(color: Colors.white70),
                   ),
-                  TextButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SignupPage()),
-                    ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const SignupPage()),
+                      );
+                    },
                     child: const Text(
-                      'Sign Up',
-                      style: TextStyle(color: Colors.yellow),
+                      "Sign Up",
+                      style: TextStyle(
+                        color: Colors.amber,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -189,26 +200,35 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// 🔹 Input Field Widget
-  Widget _inputField({
-    required TextEditingController controller,
-    required String hint,
-    bool isPassword = false,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: Colors.black),  // Text color is black inside the white box
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white,  // White background for input fields
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.black),  // Black hint text
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+  // ===== SMALL WIDGETS =====
+
+  Widget _label(String text) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white70),
+      ),
+    );
+  }
+
+  Widget _inputField(TextEditingController c, bool isPass) {
+    return Container(
+      margin: const EdgeInsets.only(top: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextField(
+        controller: c,
+        obscureText: isPass,
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          contentPadding:
+              EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         ),
       ),
     );
   }
 }
+
