@@ -77,7 +77,17 @@ flutter:
    - assets/videos/pushup.mp4
    - assets/images/glass.png
    - assets/images/run.png
-
+   - assets/images/burpees.png
+   - assets/images/jumping.jpg
+   - assets/images/bicep curl.png
+   - assets/images/mobility flow.jpg
+   - assets/images/shoulder press.jpg
+   - assets/images/yoga stretch.jpg
+   - assets/videos/burpees.mp4
+   - assets/videos/shoulder_press.mp4
+   - assets/videos/jumping_jacks.mp4
+   - assets/videos/bicep_curl.mp4
+ 
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
