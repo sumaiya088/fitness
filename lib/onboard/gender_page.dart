@@ -9,142 +9,137 @@ class GenderPage extends StatefulWidget {
 }
 
 class _GenderPageState extends State<GenderPage> {
+  // We start by assuming 'male' is selected
   String selectedGender = 'male';
-
-  final Color bgColor = const Color(0xFF1E2328);
-  final Color yellow = const Color(0xFFF5C518);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgColor,
+      // 1. BACKGROUND COLOR
+      backgroundColor: const Color(0xFF1E2328),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
-              const SizedBox(height: 30),
-
-              /// small subtitle
-              const Text(
-                'Tell me about yourself',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              /// title
+              const SizedBox(height: 50),
               const Text(
                 "What's your gender?",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 50),
 
-              /// MALE
-              _genderOption(
-                icon: Icons.male,
-                value: 'male',
-                label: 'Male',
+              // 2. MALE SELECTION AREA
+              GestureDetector(
+                onTap: () {
+                  // When tapped, we tell Flutter to update the UI
+                  setState(() {
+                    selectedGender = 'male';
+                  });
+                },
+                child: Column(
+                  children: [
+                    Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        // If selectedGender is male, use yellow. Otherwise, use grey.
+                        color: selectedGender == 'male'
+                            ? const Color(0xFFF5C518)
+                            : Colors.grey.shade800,
+                      ),
+                      child: const Icon(
+                        Icons.male,
+                        size: 50,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Male",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ],
+                ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
 
-              /// FEMALE
-              _genderOption(
-                icon: Icons.female,
-                value: 'female',
-                label: 'Female',
+              // 3. FEMALE SELECTION AREA
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedGender = 'female';
+                  });
+                },
+                child: Column(
+                  children: [
+                    Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: selectedGender == 'female'
+                            ? const Color(0xFFF5C518)
+                            : Colors.grey.shade800,
+                      ),
+                      child: const Icon(
+                        Icons.female,
+                        size: 50,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Female",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ],
+                ),
               ),
 
               const Spacer(),
 
-              /// NEXT BUTTON
+              // 4. NEXT BUTTON
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 55,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: yellow,
+                    backgroundColor: const Color(0xFFF5C518),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
                   onPressed: () {
+                    // Navigate to WeightPage and pass the gender variable
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => WeightPage(
-                          gender: selectedGender,
-                        ),
+                        builder: (context) =>
+                            WeightPage(gender: selectedGender),
                       ),
                     );
                   },
                   child: const Text(
-                    'NEXT →',
+                    "NEXT",
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
-
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
             ],
           ),
         ),
       ),
     );
   }
-
-  /// gender option widget (icon + label)
-  Widget _genderOption({
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
-    final bool isSelected = selectedGender == value;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() => selectedGender = value);
-      },
-      child: Column(
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isSelected ? yellow : Colors.grey.shade800,
-            ),
-            child: Icon(
-              icon,
-              size: 60,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? yellow : Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
-

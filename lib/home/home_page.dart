@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../daily challenge/workout_detail_page.dart';
 import '../services/workout_service.dart';
+import '../profile/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -38,7 +40,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // 🔥 ONLY THIS IS GOAL BASED
+  // 🔥 Goal based exercises
   List<Map<String, String>> goalExercises() {
     if (userGoal == "Lose Weight") {
       return [
@@ -54,10 +56,9 @@ class _HomePageState extends State<HomePage> {
       ];
     }
 
-    // Keep Fit
     return [
       {"title": "Yoga Stretch", "img": "assets/images/yoga stretch.jpg"},
-      {"title": "Mobility FLow", "img": "assets/images/mobility flow.jpg"},
+      {"title": "Mobility Flow", "img": "assets/images/mobility flow.jpg"},
     ];
   }
 
@@ -88,14 +89,30 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: bg,
 
+      // ✅ BOTTOM NAV (HOME + PROFILE ONLY)
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: yellow,
-        currentIndex: 0,
-       
+        backgroundColor: bg,
+        currentIndex: 0, // Home active
+        selectedItemColor: yellow,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            );
+          }
+        },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Home",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: "Profile",
+          ),
         ],
       ),
 
@@ -105,7 +122,6 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // ===== GREETING =====
               const Text(
                 "Hello!\nGood Morning 👋",
@@ -118,7 +134,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 24),
 
-              // ===== DAILY CHALLENGES (UNCHANGED) =====
+              // ===== DAILY CHALLENGES =====
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -144,41 +160,13 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              "Take the challenges",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                          Icon(Icons.timer, size: 16),
-                          SizedBox(width: 4),
-                          Text("20 min", style: TextStyle(fontSize: 12)),
-                          SizedBox(width: 12),
-                          Icon(Icons.play_circle_fill),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
 
               const SizedBox(height: 30),
 
-              // ===== CHALLENGES (UNCHANGED) =====
+              // ===== CHALLENGES =====
               const Text(
                 "Challenges",
                 style: TextStyle(
@@ -208,25 +196,30 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 16),
 
+              // ✅ Plank tile with image
               _challengeTile(
                 cardDark,
                 "Plank",
-                "15 min",
+                "5 min",
                 "1 exercise",
+                "assets/images/plank.jpg",
                 () => openWorkout(context, "Plank"),
               ),
               const SizedBox(height: 10),
+
+              // ✅ Lunges tile with image
               _challengeTile(
                 cardDark,
                 "Lunges",
                 "20 min",
                 "1 exercise",
+                "assets/images/lunges.jpg",
                 () => openWorkout(context, "Lunges"),
               ),
 
               const SizedBox(height: 30),
 
-              // 🔥 CATEGORY REPLACED (ONLY THIS PART)
+              // ===== GOAL BASED =====
               Text(
                 "$userGoal Exercises",
                 style: const TextStyle(
@@ -314,45 +307,57 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ✅ UPDATED: tile now supports image background
   static Widget _challengeTile(
     Color bg,
     String title,
     String time,
     String ex,
+    String img,
     VoidCallback onTap,
   ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        height: 100,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: bg,
           borderRadius: BorderRadius.circular(16),
+          image: DecorationImage(
+            image: AssetImage(img),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.4),
+              BlendMode.darken,
+            ),
+          ),
         ),
         child: Row(
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     title,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     "$time • $ex",
-                    style: const TextStyle(color: Colors.white54),
+                    style: const TextStyle(color: Colors.white70),
                   ),
                 ],
               ),
             ),
             const Icon(
               Icons.arrow_forward_ios,
-              color: Colors.white54,
+              color: Colors.white70,
               size: 16,
             ),
           ],

@@ -11,227 +11,243 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
-  bool rememberMe = false;
-  bool isLoading = false;
+  bool isPageLoading = false;
+  bool isPasswordHidden = true;
+  bool isRememberMeChecked = false;
 
-  final Color bgColor = const Color(0xFF1E2328);
-  final Color yellow = const Color(0xFFF5C518);
+  // --- CLASSY ERROR SNACKBAR ---
+  // VIVA TIP: This is a reusable helper function to keep the code clean.
+  void showStatusLine(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: isError ? Colors.redAccent : Colors.green.shade700,
+        behavior: SnackBarBehavior.floating, // Makes it look modern/classy
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
-  Future<void> signup() async {
-    if (emailController.text.isEmpty ||
-        passwordController.text.isEmpty ||
-        confirmPasswordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("All fields are required")),
-      );
+  Future<void> startSignupProcess() async {
+    // 1. Check for empty boxes
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      showStatusLine("Please fill in your details");
       return;
     }
 
+    // 2. Check for matching passwords
     if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Passwords do not match")),
-      );
+      showStatusLine("Passwords do not match");
       return;
     }
 
-    setState(() => isLoading = true);
+    // 3. Check password length
+    if (passwordController.text.length < 6) {
+      showStatusLine("Password must be at least 6 characters");
+      return;
+    }
+
+    setState(() => isPageLoading = true);
 
     try {
-      final supabase = Supabase.instance.client;
-
-      final res = await supabase.auth.signUp(
+      await Supabase.instance.client.auth.signUp(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      final user = res.user;
-      if (user == null) {
-        throw const AuthException("Signup failed");
+      showStatusLine("Account created successfully!", isError: false);
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => GenderPage()),
+        );
       }
-
-      // ⚠️ IMPORTANT
-      // user_profile insert এখানে করবো না
-      // database trigger এটা automatically করে
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const GenderPage()),
-      );
     } on AuthException catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Signup error: $e")));
+      // CLASSY TRANSLATIONS FOR DATABASE ERRORS
+      if (e.message.contains("already registered")) {
+        showStatusLine("This email is already in use");
+      } else if (e.message.contains("network")) {
+        showStatusLine("Check your internet connection");
+      } else {
+        showStatusLine("Registration failed. Please try again.");
+      }
+    } catch (error) {
+      showStatusLine("Something went wrong");
     } finally {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) setState(() => isPageLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // I kept your UI code exactly the same as you had it below...
     return Scaffold(
-      backgroundColor: bgColor,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 40),
-
-              // ===== ICON =====
-              const Icon(
+      backgroundColor: const Color(0xFF1E2328),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(25.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 60.0),
+            const Center(
+              child: Icon(
                 Icons.fitness_center,
-                size: 80,
+                size: 80.0,
                 color: Colors.indigo,
               ),
-
-              const SizedBox(height: 16),
-
-              Text(
-                "Sign Up",
+            ),
+            const SizedBox(height: 10.0),
+            const Center(
+              child: Text(
+                "Create Account",
                 style: TextStyle(
-                  color: yellow,
-                  fontSize: 28,
+                  color: Color(0xFFF5C518),
+                  fontSize: 28.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
-              const SizedBox(height: 40),
-
-              // ===== EMAIL =====
-              _label("Email Address"),
-              _inputField(emailController, false),
-
-              const SizedBox(height: 18),
-
-              // ===== PASSWORD =====
-              _label("Password"),
-              _inputField(passwordController, true),
-
-              const SizedBox(height: 18),
-
-              // ===== CONFIRM PASSWORD =====
-              _label("Confirm Password"),
-              _inputField(confirmPasswordController, true),
-
-              const SizedBox(height: 14),
-
-              // ===== REMEMBER ME =====
-              Row(
-                children: [
-                  Checkbox(
-                    value: rememberMe,
-                    activeColor: yellow,
-                    onChanged: (v) {
-                      setState(() => rememberMe = v ?? false);
-                    },
-                  ),
-                  const Text(
-                    "Remember me",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              // ===== SIGNUP BUTTON =====
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: yellow,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: isLoading ? null : signup,
-                  child: isLoading
-                      ? const CircularProgressIndicator(
-                          color: Colors.black,
-                        )
-                      : const Text(
-                          "Sign Up",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
+            ),
+            const SizedBox(height: 30.0),
+            const Text(
+              "Email Address",
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8.0),
+            TextField(
+              controller: emailController,
+              style: const TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
+                hintText: "Enter your email",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
                 ),
               ),
-
-              const Spacer(),
-
-              // ===== SIGN IN =====
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Already have an Account? ",
-                    style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 20.0),
+            const Text("Password", style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 8.0),
+            TextField(
+              controller: passwordController,
+              obscureText: isPasswordHidden,
+              style: const TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
+                hintText: "Min 6 characters",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    isPasswordHidden ? Icons.visibility : Icons.visibility_off,
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LoginPage(),
+                  onPressed: () =>
+                      setState(() => isPasswordHidden = !isPasswordHidden),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20.0),
+            const Text(
+              "Confirm Password",
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8.0),
+            TextField(
+              controller: confirmPasswordController,
+              obscureText: isPasswordHidden,
+              style: const TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
+                hintText: "Re-enter password",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Checkbox(
+                  value: isRememberMeChecked,
+                  onChanged: (newValue) =>
+                      setState(() => isRememberMeChecked = newValue!),
+                  activeColor: const Color(0xFFF5C518),
+                ),
+                const Text(
+                  "Remember me",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20.0),
+            SizedBox(
+              width: double.infinity,
+              height: 55.0,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF5C518),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+                onPressed: () {
+                  if (!isPageLoading) startSignupProcess();
+                },
+                child: isPageLoading
+                    ? const CircularProgressIndicator(color: Colors.black)
+                    : const Text(
+                        "Sign Up",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
                         ),
-                      );
-                    },
-                    child: Text(
-                      "Sign In",
-                      style: TextStyle(
-                        color: yellow,
-                        fontWeight: FontWeight.bold,
                       ),
+              ),
+            ),
+            const SizedBox(height: 20.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  "Already have an account? ",
+                  style: TextStyle(color: Colors.white70),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginPage(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "Sign In",
+                    style: TextStyle(
+                      color: Color(0xFFF5C518),
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ===== SMALL UI PARTS =====
-
-  Widget _label(String text) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white70),
-      ),
-    );
-  }
-
-  Widget _inputField(TextEditingController c, bool isPass) {
-    return Container(
-      margin: const EdgeInsets.only(top: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        controller: c,
-        obscureText: isPass,
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

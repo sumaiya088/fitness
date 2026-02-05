@@ -3,90 +3,113 @@ import '../bmi/bmi_page.dart';
 
 class HeightPage extends StatefulWidget {
   final String gender;
-  final double weight; // kg
+  final double weight;
 
-  const HeightPage({
-    super.key,
-    required this.gender,
-    required this.weight,
-  });
+  const HeightPage({super.key, required this.gender, required this.weight});
 
   @override
   State<HeightPage> createState() => _HeightPageState();
 }
 
 class _HeightPageState extends State<HeightPage> {
-  double height = 170; // cm
-  bool isCm = true;
-
-  final Color bgColor = const Color(0xFF1E2328);
-  final Color yellow = const Color(0xFFF5C518);
+  // 1. SIMPLE VARIABLES
+  double heightValue = 170.0; // The default height
+  bool isCmSelected = true; // Toggle for CM or FT
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: const Color(0xFF1E2328),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // BACK BUTTON
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
 
+              const SizedBox(height: 40),
               const Text(
                 "What's your height?",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
 
-              /// FT / CM toggle
+              // 2. UNIT SWITCHER (CM / FT)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _unitButton('Ft', !isCm),
+                  // CM Button
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isCmSelected
+                          ? const Color(0xFFF5C518)
+                          : Colors.grey[800],
+                    ),
+                    onPressed: () => setState(() => isCmSelected = true),
+                    child: const Text("Cm"),
+                  ),
                   const SizedBox(width: 10),
-                  _unitButton('Cm', isCm),
+                  // FT Button
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: !isCmSelected
+                          ? const Color(0xFFF5C518)
+                          : Colors.grey[800],
+                    ),
+                    onPressed: () => setState(() => isCmSelected = false),
+                    child: const Text("Ft"),
+                  ),
                 ],
               ),
 
-              const SizedBox(height: 40),
+              const Spacer(),
 
-              /// Height value
+              // 3. HEIGHT DISPLAY
               Text(
-                isCm
-                    ? '${height.toInt()} cm'
-                    : '${(height / 30.48).toStringAsFixed(1)} ft',
-                style: TextStyle(
-                  color: yellow,
-                  fontSize: 36,
+                isCmSelected
+                    ? "${heightValue.toInt()} cm"
+                    : "${(heightValue / 30.48).toStringAsFixed(1)} ft",
+                style: const TextStyle(
+                  color: Color(0xFFF5C518),
+                  fontSize: 48,
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
+              // 4. THE SLIDER
               Slider(
-                value: height,
-                min: 120,
-                max: 220,
-                divisions: 100,
-                activeColor: yellow,
-                inactiveColor: Colors.grey,
-                onChanged: (v) => setState(() => height = v),
+                value: heightValue,
+                min: 100.0,
+                max: 250.0,
+                activeColor: const Color(0xFFF5C518),
+                onChanged: (value) {
+                  setState(() {
+                    heightValue = value; // Update the height as you slide
+                  });
+                },
               ),
 
-              const SizedBox(height: 50),
+              const Spacer(),
 
-              /// NEXT BUTTON
+              // 5. NAVIGATE TO BMI PAGE
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 55,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: yellow,
+                    backgroundColor: const Color(0xFFF5C518),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -95,19 +118,18 @@ class _HeightPageState extends State<HeightPage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => BmiPage(
+                        builder: (context) => BmiPage(
                           gender: widget.gender,
                           weight: widget.weight,
-                          height: height,
+                          height: heightValue,
                         ),
                       ),
                     );
                   },
                   child: const Text(
-                    'NEXT →',
+                    "CALCULATE BMI →",
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -117,21 +139,6 @@ class _HeightPageState extends State<HeightPage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _unitButton(String text, bool selected) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: selected ? yellow : Colors.grey.shade800,
-        foregroundColor: Colors.black,
-      ),
-      onPressed: () {
-        setState(() {
-          isCm = text == 'Cm';
-        });
-      },
-      child: Text(text),
     );
   }
 }

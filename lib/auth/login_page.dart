@@ -17,8 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   bool keepLogin = false;
 
   Future<void> login() async {
-    if (emailController.text.isEmpty ||
-        passwordController.text.isEmpty) {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Email & password required")),
       );
@@ -28,6 +27,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final supabase = Supabase.instance.client;
 
+      // 1. Perform Login
       final res = await supabase.auth.signInWithPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
@@ -36,179 +36,158 @@ class _LoginPageState extends State<LoginPage> {
       final user = res.user;
       if (user == null) throw Exception("Login failed");
 
-      final profile = await supabase
-          .from('user_profile')
-          .select()
-          .eq('id', user.id)
-          .maybeSingle();
-
       if (!mounted) return;
 
-      if (profile == null ||
-          profile['gender'] == null ||
-          profile['height'] == null ||
-          profile['weight'] == null ||
-          profile['goal'] == null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const GenderPage()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => HomePage()),
+      // 2. THE FIX: Always navigate to GenderPage after login
+      // We removed the code that checks the database so it never skips the flow.
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const GenderPage()),
+      );
+    } on AuthException catch (e) {
+      String message = e.message;
+      if (message.toLowerCase().contains("invalid login credentials")) {
+        message = "Invalid password or email. Please try again.";
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
         );
       }
-    } on AuthException catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Login error: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Login error: $e")));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Colors consistent with your theme
+    const Color bg = Color(0xFF1E2328);
+    const Color yellow = Colors.amber;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1E2328),
+      backgroundColor: bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 40),
-
-              // ===== ICON =====
-              const Icon(
-                Icons.fitness_center,
-                size: 80,
-                color: Colors.indigo,
-              ),
-
-              const SizedBox(height: 16),
-
-              const Text(
-                "Welcome Back",
-                style: TextStyle(
-                  color: Colors.amber,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          // Added this to prevent keyboard overflow pixels
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
+                const Icon(
+                  Icons.fitness_center,
+                  size: 80,
+                  color: Colors.indigo,
                 ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // ===== EMAIL =====
-              _label("Email Address"),
-              _inputField(emailController, false),
-
-              const SizedBox(height: 18),
-
-              // ===== PASSWORD =====
-              _label("Password"),
-              _inputField(passwordController, true),
-
-              const SizedBox(height: 10),
-
-              // ===== FORGOT =====
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    "Forget Password?",
-                    style: TextStyle(color: Colors.amber),
+                const SizedBox(height: 16),
+                const Text(
+                  "Welcome Back",
+                  style: TextStyle(
+                    color: yellow,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-
-              // ===== KEEP LOGIN =====
-              Row(
-                children: [
-                  Checkbox(
-                    value: keepLogin,
-                    activeColor: Colors.amber,
-                    onChanged: (v) {
-                      setState(() => keepLogin = v ?? false);
-                    },
-                  ),
-                  const Text(
-                    "Keep me Login",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              // ===== LOGIN BUTTON =====
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                const SizedBox(height: 40),
+                _label("Email Address"),
+                _inputField(emailController, false),
+                const SizedBox(height: 18),
+                _label("Password"),
+                _inputField(passwordController, true),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
+                    child: const Text(
+                      "Forget Password?",
+                      style: TextStyle(color: yellow),
                     ),
                   ),
-                  onPressed: login,
-                  child: const Text(
-                    "Login",
-                    style: TextStyle(
+                ),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: keepLogin,
+                      activeColor: yellow,
+                      side: const BorderSide(color: Colors.white54),
+                      onChanged: (v) {
+                        setState(() => keepLogin = v ?? false);
+                      },
+                    ),
+                    const Text(
+                      "Keep me Login",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: yellow,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: login,
+                    child: const Text(
+                      "Login",
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black),
-                  ),
-                ),
-              ),
-
-              const Spacer(),
-
-              // ===== SIGN UP =====
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Don't have an Account? ",
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const SignupPage()),
-                      );
-                    },
-                    child: const Text(
-                      "Sign Up",
-                      style: TextStyle(
-                        color: Colors.amber,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 40), // Spacing for bottom text
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Don't have an Account? ",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SignupPage()),
+                        );
+                      },
+                      child: const Text(
+                        "Sign Up",
+                        style: TextStyle(
+                          color: yellow,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ===== SMALL WIDGETS =====
-
   Widget _label(String text) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white70),
-      ),
+      child: Text(text, style: const TextStyle(color: Colors.white70)),
     );
   }
 
@@ -222,10 +201,10 @@ class _LoginPageState extends State<LoginPage> {
       child: TextField(
         controller: c,
         obscureText: isPass,
+        style: const TextStyle(color: Colors.black),
         decoration: const InputDecoration(
           border: InputBorder.none,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         ),
       ),
     );

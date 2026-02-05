@@ -4,32 +4,29 @@ import '../auth/login_page.dart';
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
-  final Color bgColor = const Color(0xFF0F0F0F);
-  final Color yellow = const Color(0xFFF5C518);
-
   @override
   Widget build(BuildContext context) {
+    const Color yellow = Color(0xFFF5C518);
+
     return Scaffold(
-      backgroundColor: bgColor,
+      // We use a Stack to layer things on top of each other
       body: Stack(
         children: [
-
-          /// 🔵 Background Image
+          // LAYER 1: The Background Image
           Positioned.fill(
             child: Image.asset(
               'assets/images/splash.jpeg',
-              fit: BoxFit.cover,
+              fit: BoxFit.cover, // This makes the image fill the whole screen
             ),
           ),
 
-          /// 🌑 Dark Overlay
+          // LAYER 2: The Dark Filter (Overlay)
+          // This makes the white text easier to read over the image
           Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.4),
-            ),
+            child: Container(color: Colors.black.withOpacity(0.4)),
           ),
 
-          /// 📝 Text + Button
+          // LAYER 3: The Text and Button (At the bottom)
           Positioned(
             bottom: 50,
             left: 24,
@@ -37,23 +34,19 @@ class SplashScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
-                /// Text
                 const Text(
                   'SMALL STEPS\nBIG CHANGES',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 26,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    height: 1.2,
                   ),
                 ),
-
                 const SizedBox(height: 24),
 
-                /// GET STARTED BUTTON
+                // THE BUTTON
                 SizedBox(
-                  width: double.infinity,
+                  width: double.infinity, // Full width button
                   height: 56,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -63,20 +56,17 @@ class SplashScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
+                      // Move to the Login Page
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => LoginPage(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
                       );
                     },
                     child: const Text(
                       'GET STARTED',
                       style: TextStyle(
                         color: Colors.black,
-                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
                       ),
                     ),
                   ),
@@ -89,4 +79,3 @@ class SplashScreen extends StatelessWidget {
     );
   }
 }
-
