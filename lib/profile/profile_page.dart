@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../auth/login_page.dart';
 import '../home/home_page.dart';
 
@@ -21,8 +20,7 @@ class _ProfilePageState extends State<ProfilePage> {
     'https://api.dicebear.com/7.x/avataaars/png?seed=D',
   ];
 
-  String selectedSticker =
-      'https://api.dicebear.com/7.x/avataaars/png?seed=A';
+  String selectedSticker = 'https://api.dicebear.com/7.x/avataaars/png?seed=A';
 
   Future<void> handleLogout() async {
     await supabase.auth.signOut();
@@ -62,8 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 20),
             _infoRow("Name", getUserName()),
-            _infoRow(
-                "Email", supabase.auth.currentUser?.email ?? ""),
+            _infoRow("Email", supabase.auth.currentUser?.email ?? ""),
             _infoRow("Status", "Active"),
           ],
         ),
@@ -92,11 +89,9 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             SizedBox(height: 20),
-            Text("App Version: 1.0.1",
-                style: TextStyle(color: Colors.white)),
+            Text("App Version: 1.0.1", style: TextStyle(color: Colors.white)),
             SizedBox(height: 10),
-            Text("Up to date",
-                style: TextStyle(color: Colors.white24)),
+            Text("Up to date", style: TextStyle(color: Colors.white24)),
           ],
         ),
       ),
@@ -109,8 +104,7 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(color: Colors.white54)),
+          Text(label, style: const TextStyle(color: Colors.white54)),
           Text(
             value,
             style: const TextStyle(
@@ -147,14 +141,8 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
 
@@ -197,10 +185,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     backgroundColor: yellow,
                     child: CircleAvatar(
                       radius: 62,
-                      backgroundColor:
-                          const Color(0xFF2A2F35),
-                      backgroundImage:
-                          NetworkImage(selectedSticker),
+                      backgroundColor: const Color(0xFF2A2F35),
+                      backgroundImage: NetworkImage(selectedSticker),
                     ),
                   ),
                 ],
@@ -221,8 +207,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const Text(
                 "Choose your sticker",
-                style:
-                    TextStyle(color: Colors.white38, fontSize: 12),
+                style: TextStyle(color: Colors.white38, fontSize: 12),
               ),
 
               const SizedBox(height: 15),
@@ -232,18 +217,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: stickers.map((url) {
                   final isSelected = selectedSticker == url;
                   return GestureDetector(
-                    onTap: () =>
-                        setState(() => selectedSticker = url),
+                    onTap: () => setState(() => selectedSticker = url),
                     child: Container(
-                      margin:
-                          const EdgeInsets.symmetric(horizontal: 8),
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected
-                              ? yellow
-                              : Colors.transparent,
+                          color: isSelected ? yellow : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -258,16 +239,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 40),
 
-              _profileMenu(Icons.person_outline,
-                  "Personal Info", showPersonalInfo),
               _profileMenu(
-                  Icons.settings_outlined, "Settings", showSettings),
+                Icons.person_outline,
+                "Personal Info",
+                showPersonalInfo,
+              ),
+              _profileMenu(Icons.settings_outlined, "Settings", showSettings),
 
               const SizedBox(height: 50),
 
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40),
+                padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -299,13 +281,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _profileMenu(
-      IconData icon, String title, VoidCallback action) {
+  Widget _profileMenu(IconData icon, String title, VoidCallback action) {
     return GestureDetector(
       onTap: action,
       child: Container(
-        margin:
-            const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.05),
@@ -315,16 +295,19 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             Icon(icon, color: const Color(0xFFF5C518)),
             const SizedBox(width: 20),
-            Text(title,
-                style:
-                    const TextStyle(color: Colors.white, fontSize: 16)),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
             const Spacer(),
-            const Icon(Icons.arrow_forward_ios,
-                color: Colors.white24, size: 14),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white24,
+              size: 14,
+            ),
           ],
         ),
       ),
     );
   }
 }
-

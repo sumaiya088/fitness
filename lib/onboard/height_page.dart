@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bmi/bmi_page.dart';
 
 class HeightPage extends StatefulWidget {
@@ -12,12 +13,57 @@ class HeightPage extends StatefulWidget {
 }
 
 class _HeightPageState extends State<HeightPage> {
-  // 1. SIMPLE VARIABLES
-  double heightValue = 170.0; // The default height
-  bool isCmSelected = true; // Toggle for CM or FT
+  final _supabase = Supabase.instance.client;
+  double heightValue = 170.0; // Slider value
+  bool isCmSelected = true;
+  bool isLoading = false;
+
+  Future<void> saveProfileAndContinue() async {
+    setState(() => isLoading = true);
+
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      // Database insert → int required
+      await _supabase.from('user_profile').upsert({
+        'id': user.id,
+        'gender': widget.gender,
+        'weight': widget.weight.toInt(), // convert to int
+        'height': heightValue.toInt(),    // convert to int
+      });
+
+      if (!mounted) return;
+
+      // Navigate to BmiPage → double parameters
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BmiPage(
+            gender: widget.gender,
+            weight: widget.weight,       // double, keep for calculation
+            height: heightValue,         // double, keep for calculation
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: $e"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    const Color yellow = Color(0xFFF5C518);
+
     return Scaffold(
       backgroundColor: const Color(0xFF1E2328),
       body: SafeArea(
@@ -25,7 +71,6 @@ class _HeightPageState extends State<HeightPage> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              // BACK BUTTON
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
@@ -33,7 +78,6 @@ class _HeightPageState extends State<HeightPage> {
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
-
               const SizedBox(height: 40),
               const Text(
                 "What's your height?",
@@ -43,101 +87,80 @@ class _HeightPageState extends State<HeightPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 30),
-
-              // 2. UNIT SWITCHER (CM / FT)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // CM Button
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isCmSelected
-                          ? const Color(0xFFF5C518)
-                          : Colors.grey[800],
-                    ),
-                    onPressed: () => setState(() => isCmSelected = true),
-                    child: const Text("Cm"),
+                  _unitBtn(
+                    "Cm",
+                    isCmSelected,
+                    () => setState(() => isCmSelected = true),
                   ),
                   const SizedBox(width: 10),
-                  // FT Button
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: !isCmSelected
-                          ? const Color(0xFFF5C518)
-                          : Colors.grey[800],
-                    ),
-                    onPressed: () => setState(() => isCmSelected = false),
-                    child: const Text("Ft"),
+                  _unitBtn(
+                    "Ft",
+                    !isCmSelected,
+                    () => setState(() => isCmSelected = false),
                   ),
                 ],
               ),
-
               const Spacer(),
-
-              // 3. HEIGHT DISPLAY
               Text(
                 isCmSelected
                     ? "${heightValue.toInt()} cm"
                     : "${(heightValue / 30.48).toStringAsFixed(1)} ft",
                 style: const TextStyle(
-                  color: Color(0xFFF5C518),
+                  color: yellow,
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
-              // 4. THE SLIDER
               Slider(
                 value: heightValue,
                 min: 100.0,
                 max: 250.0,
-                activeColor: const Color(0xFFF5C518),
-                onChanged: (value) {
-                  setState(() {
-                    heightValue = value; // Update the height as you slide
-                  });
-                },
+                activeColor: yellow,
+                onChanged: (value) => setState(() => heightValue = value),
               ),
-
               const Spacer(),
-
-              // 5. NAVIGATE TO BMI PAGE
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF5C518),
+                    backgroundColor: yellow,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BmiPage(
-                          gender: widget.gender,
-                          weight: widget.weight,
-                          height: heightValue,
+                  onPressed: isLoading ? null : saveProfileAndContinue,
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.black)
+                      : const Text(
+                          "CALCULATE BMI →",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    "CALCULATE BMI →",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _unitBtn(String label, bool selected, VoidCallback onPressed) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: selected ? const Color(0xFFF5C518) : Colors.grey[800],
+      ),
+      onPressed: onPressed,
+      child: Text(
+        label,
+        style: TextStyle(color: selected ? Colors.black : Colors.white),
       ),
     );
   }

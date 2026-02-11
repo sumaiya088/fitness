@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../onboard/gender_page.dart';
-import '../home/home_page.dart';
+import '../onboard/weight_page.dart'; // Changed this from gender_page
 import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -27,7 +26,6 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final supabase = Supabase.instance.client;
 
-      // 1. Perform Login
       final res = await supabase.auth.signInWithPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
@@ -38,11 +36,12 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      // 2. THE FIX: Always navigate to GenderPage after login
-      // We removed the code that checks the database so it never skips the flow.
+      // --- THE FIX FOR RETURNING USERS ---
+      // When a user logs in, we skip Gender/Height and go straight to Weight.
+      // We pass NO gender to the WeightPage constructor to tell it "This is a Login".
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const GenderPage()),
+        MaterialPageRoute(builder: (_) => const WeightPage()),
       );
     } on AuthException catch (e) {
       String message = e.message;
@@ -66,7 +65,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Colors consistent with your theme
     const Color bg = Color(0xFF1E2328);
     const Color yellow = Colors.amber;
 
@@ -74,7 +72,6 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: bg,
       body: SafeArea(
         child: SingleChildScrollView(
-          // Added this to prevent keyboard overflow pixels
           child: Padding(
             padding: const EdgeInsets.all(22),
             child: Column(
@@ -118,9 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                       value: keepLogin,
                       activeColor: yellow,
                       side: const BorderSide(color: Colors.white54),
-                      onChanged: (v) {
-                        setState(() => keepLogin = v ?? false);
-                      },
+                      onChanged: (v) => setState(() => keepLogin = v ?? false),
                     ),
                     const Text(
                       "Keep me Login",
@@ -135,7 +130,6 @@ class _LoginPageState extends State<LoginPage> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: yellow,
-                      elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -151,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 40), // Spacing for bottom text
+                const SizedBox(height: 40),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -184,30 +178,25 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _label(String text) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(text, style: const TextStyle(color: Colors.white70)),
-    );
-  }
+  Widget _label(String text) => Align(
+    alignment: Alignment.centerLeft,
+    child: Text(text, style: const TextStyle(color: Colors.white70)),
+  );
 
-  Widget _inputField(TextEditingController c, bool isPass) {
-    return Container(
-      margin: const EdgeInsets.only(top: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+  Widget _inputField(TextEditingController c, bool isPass) => Container(
+    margin: const EdgeInsets.only(top: 6),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: TextField(
+      controller: c,
+      obscureText: isPass,
+      style: const TextStyle(color: Colors.black),
+      decoration: const InputDecoration(
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       ),
-      child: TextField(
-        controller: c,
-        obscureText: isPass,
-        style: const TextStyle(color: Colors.black),
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
-

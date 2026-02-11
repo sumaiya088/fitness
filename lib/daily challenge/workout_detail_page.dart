@@ -20,13 +20,13 @@ class _WorkoutDetailPageState extends State<WorkoutDetailPage> {
     super.initState();
 
     // ✅ FIXED VIDEO PATH
-    _controller = VideoPlayerController.asset(
-      'assets/videos/${widget.workout.videoFile}',
-    )..initialize().then((_) {
-        setState(() {
-          isReady = true;
-        });
-      });
+    _controller =
+        VideoPlayerController.asset('assets/videos/${widget.workout.videoFile}')
+          ..initialize().then((_) {
+            setState(() {
+              isReady = true;
+            });
+          });
   }
 
   @override
@@ -52,7 +52,6 @@ class _WorkoutDetailPageState extends State<WorkoutDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             /// 🎥 VIDEO
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
@@ -63,9 +62,7 @@ class _WorkoutDetailPageState extends State<WorkoutDetailPage> {
                     )
                   : const SizedBox(
                       height: 200,
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      child: Center(child: CircularProgressIndicator()),
                     ),
             ),
 
@@ -131,8 +128,7 @@ class _WorkoutDetailPageState extends State<WorkoutDetailPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          WorkoutTimerPage(workout: widget.workout),
+                      builder: (_) => WorkoutTimerPage(workout: widget.workout),
                     ),
                   );
                 },

@@ -1,36 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'height_page.dart';
+import '../home/home_page.dart';
+import '../bmi/bmi_page.dart'; // Make sure this import is here!
 
 class WeightPage extends StatefulWidget {
-  final String gender;
-  const WeightPage({super.key, required this.gender});
+  final String? gender;
+  const WeightPage({super.key, this.gender});
 
   @override
   State<WeightPage> createState() => _WeightPageState();
 }
 
 class _WeightPageState extends State<WeightPage> {
-  // 1. SIMPLE STATE
-  double weight = 60; // Default weight
-  bool isKg = true; // Toggle for Kg or Lbs
+  double weight = 60;
+  bool isKg = true;
+  bool isLoading = false;
 
-  // 2. UNIT CONVERSION LOGIC
-  // This function changes the number when you click Kg or Lbs
   void switchUnit(bool toKg) {
-    if (isKg == toKg) return; // Do nothing if already selected
-
+    if (isKg == toKg) return;
     setState(() {
       if (toKg) {
-        weight = weight / 2.205; // Convert Lbs to Kg
+        weight = weight / 2.205;
       } else {
-        weight = weight * 2.205; // Convert Kg to Lbs
+        weight = weight * 2.205;
       }
       isKg = toKg;
     });
   }
 
+  Future<void> handleNext() async {
+    // --- 1. SIGNUP FLOW ---
+    // If gender is passed, we go to Height Page to finish profile
+    if (widget.gender != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HeightPage(gender: widget.gender!, weight: weight),
+        ),
+      );
+      return;
+    }
+
+    // --- 2. LOGIN FLOW (The "Smart" BMI calculation) ---
+    setState(() => isLoading = true);
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+
+      if (user == null) throw Exception("No active session");
+
+      // Pull the stored Height and Gender we saved during Signup
+      final data = await supabase
+          .from('user_profile')
+          .select('height, gender')
+          .eq('id', user.id)
+          .single();
+
+      double storedHeight = (data['height'] as num).toDouble();
+      String storedGender = data['gender'] as String;
+
+      // Calculate Weight in KG for math if needed
+      double weightInKg = isKg ? weight : weight / 2.205;
+
+      // Update the new weight in the database
+      await supabase
+          .from('user_profile')
+          .update({'weight': weightInKg})
+          .eq('id', user.id);
+
+      if (!mounted) return;
+
+      // GO STRAIGHT TO BMI PAGE (Measuring BMI based on new weight + stored height)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BmiPage(
+            gender: storedGender,
+            weight: weightInKg,
+            height: storedHeight,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: Profile not found. Please Sign Up.")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    const Color yellow = Color(0xFFF5C518);
     return Scaffold(
       backgroundColor: const Color(0xFF1E2328),
       body: SafeArea(
@@ -38,18 +103,17 @@ class _WeightPageState extends State<WeightPage> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              // BACK BUTTON
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
+              if (widget.gender != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ),
-              ),
-
               const Spacer(),
               const Text(
-                "What's your weight?",
+                "What's your current weight?",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -57,68 +121,51 @@ class _WeightPageState extends State<WeightPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // 3. UNIT SELECTOR
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _unitButton("Kg", isKg, () => switchUnit(true)),
+                  _unitBtn("Kg", isKg, () => switchUnit(true)),
                   const SizedBox(width: 15),
-                  _unitButton("Lbs", !isKg, () => switchUnit(false)),
+                  _unitBtn("Lbs", !isKg, () => switchUnit(false)),
                 ],
               ),
-
               const SizedBox(height: 40),
-
-              // 4. WEIGHT DISPLAY
               Text(
                 "${weight.round()} ${isKg ? "kg" : "lbs"}",
                 style: const TextStyle(
-                  color: Color(0xFFF5C518),
+                  color: yellow,
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
-              // 5. SLIDER
               Slider(
                 value: weight,
-                // Adjust min/max based on the unit
                 min: isKg ? 30 : 66,
                 max: isKg ? 200 : 440,
-                activeColor: const Color(0xFFF5C518),
+                activeColor: yellow,
                 onChanged: (value) => setState(() => weight = value),
               ),
-
               const Spacer(),
-
-              // 6. NEXT BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF5C518),
+                    backgroundColor: yellow,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            HeightPage(gender: widget.gender, weight: weight),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    "NEXT →",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  onPressed: isLoading ? null : handleNext,
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.black)
+                      : const Text(
+                          "MEASURE BMI →",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -128,8 +175,7 @@ class _WeightPageState extends State<WeightPage> {
     );
   }
 
-  // 7. HELPER FOR BUTTONS
-  Widget _unitButton(String title, bool active, VoidCallback onTap) {
+  Widget _unitBtn(String title, bool active, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

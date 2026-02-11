@@ -83,9 +83,9 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Workout Completed 🎉")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Workout Completed 🎉")));
   }
 
   String formatTime(int sec) {
@@ -94,8 +94,7 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
     return "$m:$s";
   }
 
-  double progress() =>
-      1 - (remainingSeconds / totalSeconds);
+  double progress() => 1 - (remainingSeconds / totalSeconds);
 
   @override
   void dispose() {
@@ -120,7 +119,6 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-
             const SizedBox(height: 20),
 
             /// ⏱ TIMER CIRCLE
@@ -188,8 +186,8 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
                         isRunning
                             ? "PAUSE"
                             : isPaused
-                                ? "RESUME"
-                                : "START",
+                            ? "RESUME"
+                            : "START",
                         style: const TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
@@ -225,18 +223,27 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
                   Text(
                     "💪 Tips",
                     style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   SizedBox(height: 8),
-                  Text("• Keep your form correct",
-                      style: TextStyle(color: Colors.white70)),
-                  Text("• Breathe steadily throughout",
-                      style: TextStyle(color: Colors.white70)),
-                  Text("• Take breaks if needed",
-                      style: TextStyle(color: Colors.white70)),
-                  Text("• Stay hydrated",
-                      style: TextStyle(color: Colors.white70)),
+                  Text(
+                    "• Keep your form correct",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  Text(
+                    "• Breathe steadily throughout",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  Text(
+                    "• Take breaks if needed",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  Text(
+                    "• Stay hydrated",
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ],
               ),
             ),
@@ -272,4 +279,3 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
     );
   }
 }
-

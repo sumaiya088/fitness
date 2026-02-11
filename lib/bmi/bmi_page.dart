@@ -14,7 +14,7 @@ class BmiPage extends StatelessWidget {
     required this.height,
   });
 
-  // --- MATH LOGIC (Easy to explain) ---
+  // -------- BMI LOGIC --------
   double get bmi => weight / ((height / 100) * (height / 100));
 
   String get bmiStatus {
@@ -22,13 +22,6 @@ class BmiPage extends StatelessWidget {
     if (bmi < 25) return "Normal";
     if (bmi < 30) return "Overweight";
     return "Obese";
-  }
-
-  int get activeIndex {
-    if (bmi < 18.5) return 0;
-    if (bmi < 25) return 1;
-    if (bmi < 30) return 2;
-    return 3;
   }
 
   @override
@@ -44,15 +37,16 @@ class BmiPage extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              // 1. HEADER ROW
               _buildHeader(context),
 
               const SizedBox(height: 30),
 
-              // 2. THE GRADIENT CIRCLE
+              // BMI Circle
               _buildBmiCircle(),
 
               const SizedBox(height: 12),
+
+              // BMI Status (depends on BMI value)
               Text(
                 bmiStatus,
                 style: const TextStyle(
@@ -64,17 +58,17 @@ class BmiPage extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              // 3. INFO CARD (Gender, Weight, Height)
+              // Info Card
               _buildInfoCard(cardColor),
 
               const SizedBox(height: 30),
 
-              // 4. THE BMI RANGE SECTION (The Bar and the Legend)
-              _buildRangeSection(yellow),
+              // Plain BMI Range (1st UI style)
+              _buildRangeSection(cardColor),
 
               const SizedBox(height: 36),
 
-              // 5. THE NEXT BUTTON
+              // Next Button
               _buildNextButton(context, yellow),
             ],
           ),
@@ -83,7 +77,7 @@ class BmiPage extends StatelessWidget {
     );
   }
 
-  // --- HELPER METHODS (These make your code look professional) ---
+  // -------- UI PARTS --------
 
   Widget _buildHeader(BuildContext context) {
     return Row(
@@ -151,56 +145,30 @@ class BmiPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRangeSection(Color yellow) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("BMI Range", style: TextStyle(color: Colors.white)),
-        const SizedBox(height: 14),
-
-        // THE COLORED BAR WITH INDICATOR
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final segmentWidth = constraints.maxWidth / 4;
-            final indicatorX =
-                (segmentWidth * activeIndex) + (segmentWidth / 2) - 2;
-
-            return Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Row(
-                  children: const [
-                    _ScaleBar(color: Colors.red),
-                    _ScaleBar(color: Colors.green),
-                    _ScaleBar(color: Colors.orange),
-                    _ScaleBar(color: Colors.purple),
-                  ],
-                ),
-                Positioned(
-                  left: indicatorX,
-                  top: -8,
-                  child: Container(
-                    width: 4,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: yellow,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-
-        const SizedBox(height: 16),
-
-        // THE LEGEND (The dots and descriptions you wanted back!)
-        const Legend(color: Colors.red, text: "Underweight (<18.5)"),
-        const Legend(color: Colors.green, text: "Normal (18.5 – 24.9)"),
-        const Legend(color: Colors.orange, text: "Overweight (25 – 29.9)"),
-        const Legend(color: Colors.purple, text: "Obese (30+)"),
-      ],
+  Widget _buildRangeSection(Color cardColor) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            "Standard BMI Range:",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 12),
+          _PlainRow("Underweight", "Below 18.5"),
+          _PlainRow("Normal", "18.5 – 24.9"),
+          _PlainRow("Overweight", "25.0 – 29.9"),
+          _PlainRow("Obese", "30.0 and Above"),
+        ],
+      ),
     );
   }
 
@@ -220,14 +188,11 @@ class BmiPage extends StatelessWidget {
           final user = supabase.auth.currentUser;
           if (user == null) return;
 
-          await supabase
-              .from('user_profile')
-              .update({
-                'gender': gender,
-                'weight': weight.round(),
-                'height': height.round(),
-              })
-              .eq('id', user.id);
+          await supabase.from('user_profile').update({
+            'gender': gender,
+            'weight': weight.round(),
+            'height': height.round(),
+          }).eq('id', user.id);
 
           if (!context.mounted) return;
 
@@ -265,48 +230,23 @@ class BmiPage extends StatelessWidget {
   }
 }
 
-// --- SUPPORTING WIDGETS (The Legend and Bar segments) ---
+// -------- SUPPORT WIDGET --------
 
-class _ScaleBar extends StatelessWidget {
-  final Color color;
-  const _ScaleBar({required this.color});
+class _PlainRow extends StatelessWidget {
+  final String title;
+  final String value;
 
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        height: 8,
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  }
-}
-
-class Legend extends StatelessWidget {
-  final Color color;
-  final String text;
-  const Legend({required this.color, required this.text});
+  const _PlainRow(this.title, this.value);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            width: 14,
-            height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(text, style: const TextStyle(color: Colors.white54)),
+          Text(title, style: const TextStyle(color: Colors.white54)),
+          Text(value, style: const TextStyle(color: Colors.white)),
         ],
       ),
     );

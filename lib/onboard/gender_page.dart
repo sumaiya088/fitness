@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'weight_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../onboard/weight_page.dart';
 
 class GenderPage extends StatefulWidget {
   const GenderPage({super.key});

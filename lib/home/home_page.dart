@@ -67,14 +67,12 @@ class _HomePageState extends State<HomePage> {
       final workout = await service.getWorkoutByTitle(title);
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => WorkoutDetailPage(workout: workout),
-        ),
+        MaterialPageRoute(builder: (_) => WorkoutDetailPage(workout: workout)),
       );
     } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Workout not found")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Workout not found")));
     }
   }
 
@@ -105,14 +103,8 @@ class _HomePageState extends State<HomePage> {
           }
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
 
@@ -271,11 +263,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  static Widget _challengeImage(
-    String title,
-    String img,
-    VoidCallback onTap,
-  ) {
+  static Widget _challengeImage(String title, String img, VoidCallback onTap) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
